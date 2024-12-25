@@ -17,18 +17,15 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-# Wallet Views
 class WalletListView(generics.ListCreateAPIView):
     serializer_class = WalletSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        """ Фақат маълумотҳои корбарро нишон медиҳем. """
         return Wallet.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        """Создани хазинаи корбар."""
         serializer.save(user=self.request.user)
 
 
@@ -37,7 +34,6 @@ class WalletDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Фақат маълумоти Wallet-и корбарро нишон медиҳем."""
         return Wallet.objects.filter(user=self.request.user)
 
 class TransactionListView(generics.ListCreateAPIView):
@@ -46,13 +42,11 @@ class TransactionListView(generics.ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        """Фақат амалиётҳои корбарро нишон медиҳем."""
         return Transaction.objects.filter(wallet__user=self.request.user)
 
     def perform_create(self, serializer):
-        """Сохтани амалиёт ва ёрӣ бо дигаргунии ҳамён."""
         user_wallet = Wallet.objects.get(user=self.request.user)
-        serializer.save(wallet=user_wallet)  # Ҳамёнро таъриф мекунем
+        serializer.save(wallet=user_wallet)  
 
 
 
@@ -82,12 +76,21 @@ class UserProfileCreateView(generics.CreateAPIView):
         serializer.save(user=self.request.user)
 
 
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from .models import UserProfile
+# from .s import UserProfileSerializer
+
+@method_decorator(cache_page(60 * 5), name='dispatch')  # Кеш барои 5 дақиқа
 class UserProfileListView(generics.ListAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return UserProfile.objects.filter(user=self.request.user)
+
 
 from rest_framework import generics, status
 from rest_framework.response import Response
